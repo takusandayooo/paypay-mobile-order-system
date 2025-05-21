@@ -10,7 +10,7 @@
 
 ## 主な機能
 
-*   **クライアントサイド ([client](client))**
+*   **クライアントサイド ([client](./client))**
     *   商品一覧表示と選択
     *   PayPay QRコード決済
     *   決済結果表示
@@ -18,7 +18,7 @@
     *   オーナー向け管理ページ ([client/ownerPage.html](client/ownerPage.html))
         *   Firebase Authenticationによるログイン認証
         *   商品情報の管理（追加・編集）
-*   **サーバーサイド ([backend](backend))**
+*   **サーバーサイド ([backend](./backend))**
     *   商品情報提供API
     *   PayPay決済API連携 (QRコード生成、決済ステータス確認)
     *   Firebase Firestoreとの連携 (注文データ保存、商品データ管理)
@@ -60,7 +60,7 @@ cd paypay-mobile-order-system
 *   `backend/.env.example` をコピーして `backend/.env` を作成し、PayPay APIキーおよびFirebase関連の環境変数を設定します。
     *   [backend/.env.example](backend/.env.example)
 
-### 3. バックエンド ([backend](backend))
+### 3. バックエンド ([backend](./backend))
 
 ```bash
 cd backend
@@ -69,7 +69,7 @@ pnpm ts-node server.ts
 ```
 サーバーはデフォルトでポート3000で起動します。
 
-### 4. フロントエンド ([client](client))
+### 4. フロントエンド ([client](./client))
 
 ```bash
 cd client
