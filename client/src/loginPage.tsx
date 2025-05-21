@@ -19,6 +19,7 @@ import {
     AppBar,
     Box,
     Button,
+    Checkbox,
     Dialog,
     Fab,
     Snackbar,
@@ -305,7 +306,7 @@ function FoodDialog({
           <Checkbox
             id="isSoldOut"
             checked={value.isSoldOut}
-            onChange={(e) => setValue({ ...value, isSoldOut: e.target.checked })}
+            onChange={(e: { target: { checked: any; }; }) => setValue({ ...value, isSoldOut: e.target.checked })}
           />
           <label htmlFor="isSoldOut" style={{ marginLeft: 8 }}>売り切れ</label>
         </Box>
