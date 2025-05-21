@@ -36,6 +36,9 @@ const App: React.FC = () => {
   // 数量変更
   const handleQuantityChange = (item: FoodItemSchema, quantity: number) => {
     if (quantity < 0) return;
+    // 品切れ商品で、数量を増やす操作の場合は処理をスキップ
+    if (item.isSoldOut && quantity > (getItemQuantity(item.id || ""))) return;
+    
     const idx = orderItems.findIndex((o) => o.item.id === item.id);
     if (idx >= 0) {
       const updated = [...orderItems];
@@ -57,7 +60,27 @@ const App: React.FC = () => {
   const handlePayWithPayPay = async () => {
     if (orderItems.length === 0) return;
     setIsProcessing(true);
+    
     try {
+      // 最新の商品情報を取得
+      const response = await fetch("/foodItem");
+      const foodItemData = await response.json();
+      const latestFoodItems =FoodItemSchema.array().parse( foodItemData.foodItems);
+      
+      // 売り切れチェック
+      const soldOutItems = orderItems.filter(orderItem => {
+        const latestItem = latestFoodItems.find(item => item.id === orderItem.item.id);
+        return latestItem && latestItem.isSoldOut;
+      });
+      
+      // 売り切れアイテムがある場合、処理を中断
+      if (soldOutItems.length > 0) {
+        const soldOutNames = soldOutItems.map(item => item.item.name).join(", ");
+        alert(`申し訳ございません。以下の商品は売り切れとなりました: ${soldOutNames}`);
+        setIsProcessing(false);
+        return;
+      }
+      
       const parsedOrderItems = OderItemSchema.array().parse(
         orderItems.map((o) => ({
           name: o.item.name,
@@ -160,6 +183,7 @@ const App: React.FC = () => {
                     </span>
                     <button
                       onClick={() => handleQuantityChange(item, q + 1)}
+                      disabled={item.isSoldOut}
                       style={{ width: 30, height: 30 }}
                     >
                       +
