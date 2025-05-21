@@ -302,8 +302,7 @@ function FoodDialog({
         />
         
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
+          <Checkbox
             id="isSoldOut"
             checked={value.isSoldOut}
             onChange={(e) => setValue({ ...value, isSoldOut: e.target.checked })}
