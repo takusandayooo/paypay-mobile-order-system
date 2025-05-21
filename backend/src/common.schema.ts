@@ -57,6 +57,7 @@ export const FoodItemSchema = z.object({
     category: z.string(),
     productId: z.string(),
     amount: z.number().int().positive(),
+    isSoldOut: z.boolean(),
 });
 export type FoodItemSchema = z.infer<typeof FoodItemSchema>;
 
