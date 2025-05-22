@@ -1,39 +1,43 @@
+/* AdminPage.tsx */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import type { CustomerOrderDataSchema, FoodItemSchema } from "./common.schema";
 import {
-    addFoodItem,
-    deleteFoodItem,
-    getCustomerAllOrderData,
-    getFoodItems,
-    updateFoodItem,
-    updateOrderCallStatus,
+  addFoodItem,
+  deleteFoodItem,
+  getCustomerAllOrderData,
+  getFoodItems,
+  updateFoodItem,
+  updateOrderCallStatus,
 } from "./firebase";
 
 import {
-    Add as AddIcon,
-    Delete as DeleteIcon,
-    Edit as EditIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import {
-    AppBar,
-    Box,
-    Button,
-    Checkbox,
-    Dialog,
-    Fab,
-    Snackbar,
-    Tab,
-    Tabs,
-    TextField,
-    Toolbar,
+  AppBar,
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  Fab,
+  Snackbar,
+  Tab,
+  Tabs,
+  TextField,
+  Toolbar,
 } from "@mui/material";
 import {
-    DataGrid,
-    GridActionsCellItem,
-    type GridColDef,
+  DataGrid,
+  GridActionsCellItem,
+  type GridColDef,
 } from "@mui/x-data-grid";
 
+/* ------------------------------------------------- */
+/*                定数・型                            */
+/* ------------------------------------------------- */
 const orderStatusOptions: CustomerOrderDataSchema["orderCallStatus"][] = [
   "not_called",
   "called",
@@ -41,6 +45,9 @@ const orderStatusOptions: CustomerOrderDataSchema["orderCallStatus"][] = [
   "not_cashed",
 ];
 
+/* ------------------------------------------------- */
+/*                画面本体                            */
+/* ------------------------------------------------- */
 export default function AdminPage() {
   /* ---------------- state ---------------- */
   const [tab, setTab] = useState<0 | 1>(0);
@@ -102,12 +109,7 @@ export default function AdminPage() {
     { field: "category", headerName: "カテゴリ", flex: 1 },
     { field: "productId", headerName: "商品ID", flex: 1 },
     { field: "amount", headerName: "価格", type: "number", flex: 0.6 },
-    { 
-      field: "isSoldOut", 
-      headerName: "売り切れ", 
-      type: "boolean", 
-      flex: 0.6 
-    },
+    { field: "isSoldOut", headerName: "売り切れ", type: "boolean", flex: 0.6 },
     {
       field: "actions",
       type: "actions",
@@ -133,9 +135,22 @@ export default function AdminPage() {
     },
   ];
 
-  const orderColumns = [
+  const orderColumns: GridColDef[] = [
     { field: "id", headerName: "OrderID", minWidth: 200, flex: 1 },
     { field: "amount", headerName: "金額", width: 120 },
+    {
+      field: "time",
+      headerName: "注文時間",
+      width: 180,
+    },
+    {
+      field: "items",
+      headerName: "内容",
+      flex: 2,
+      renderCell: (params) => (
+        <Box sx={{ whiteSpace: "pre-wrap" }}>{params.value as string}</Box>
+      ),
+    },
     {
       field: "status",
       headerName: "ステータス",
@@ -192,11 +207,20 @@ export default function AdminPage() {
               id: o.id,
               amount: o.data.amount,
               status: o.data.orderCallStatus,
+              time: new Date(o.data.orderTime).toLocaleString("ja-JP", {
+                hour12: false,
+              }),
+              items: o.data.orderItems
+                .map((it) => `${it.name} ×${it.quantity}`)
+                .join("\n"),
             }))}
             columns={orderColumns}
             autoHeight
             hideFooter
             disableRowSelectionOnClick
+            initialState={{
+              sorting: { sortModel: [{ field: "time", sort: "desc" }] },
+            }}
             sx={{ m: 2 }}
           />
         )}
@@ -256,9 +280,9 @@ function FoodDialog({
     productId: "",
     amount: 0,
     isSoldOut: false,
-
   });
 
+  /* 初期値をダイアログ開閉ごとに同期 */
   useEffect(() => {
     if (initial)
       setValue({
@@ -268,7 +292,14 @@ function FoodDialog({
         amount: initial.amount,
         isSoldOut: initial.isSoldOut,
       });
-    else setValue({ name: "", category: "", productId: "", amount: 0 , isSoldOut: false });
+    else
+      setValue({
+        name: "",
+        category: "",
+        productId: "",
+        amount: 0,
+        isSoldOut: false,
+      });
   }, [initial, open]);
 
   return (
@@ -301,14 +332,18 @@ function FoodDialog({
           }
           fullWidth
         />
-        
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           <Checkbox
             id="isSoldOut"
             checked={value.isSoldOut}
-            onChange={(e: { target: { checked: any; }; }) => setValue({ ...value, isSoldOut: e.target.checked })}
+            onChange={(e) =>
+              setValue({ ...value, isSoldOut: e.target.checked })
+            }
           />
-          <label htmlFor="isSoldOut" style={{ marginLeft: 8 }}>売り切れ</label>
+          <label htmlFor="isSoldOut" style={{ marginLeft: 8 }}>
+            売り切れ
+          </label>
         </Box>
 
         <Box sx={{ mt: 2, textAlign: "right" }}>
