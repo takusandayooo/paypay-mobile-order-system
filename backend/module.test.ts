@@ -1,10 +1,10 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import { OderItemSchema } from "./src/common.schema";
 import { createPaypayQRCode, getPaypayPaymentStatus, } from "./src/paypay";
 import { PaypayQRCodeResponseSchema, FoodItemSchema } from "./src/common.schema";
 
 import { db, addCustomerOrderData, updateOrderCallStatus, getCustomerAllOrderData } from "./src/firebase";
-import { collection, doc, setDoc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore";
 
 import { getFoodItems } from "./src/firebase";
 // .env.testingの設定を読み込む
@@ -130,7 +130,7 @@ describe("PaypayPayment", () => {
         const response = await createPaypayQRCode(testMerchantPaymentId2, testOrderDescription, testOrderItems, testAmount, testRedirectUrl);
         expect(response.statusCode).toBe(201);
         const parsedResponse = PaypayQRCodeResponseSchema.parse(response.responseData);
-        expect(parsedResponse.data.merchantPaymentId).toBe(testMerchantPaymentId2);        
+        expect(parsedResponse.data.merchantPaymentId).toBe(testMerchantPaymentId2);
         await paypayUIInput(phoneNumber, password, parsedResponse.data.url);
     });
 });
@@ -217,7 +217,7 @@ describe("getCustomerAllOrderDataとaddCustomerOrderData & updateOrderCallStatus
         const result = await updateOrderCallStatus(testMerchantPaymentId, "called");
         expect(result.statusCode).toBe(200);
         expect(result.message).toBe("オーダのステータスを変更できました。");
-        const OderItems= await getCustomerAllOrderData();
+        const OderItems = await getCustomerAllOrderData();
         const orderItem = OderItems.find(item => item.customerOrderData.merchantPaymentId === testMerchantPaymentId);
         expect(orderItem).toBeDefined();
         expect(orderItem?.customerOrderData.orderCallStatus).toBe("called");
