@@ -163,7 +163,7 @@ describe("getFoodItems", () => {
     }
     const productId = "test_product_1";
     beforeAll(async () => {
-        addFoodItem(foodItem)
+        await addFoodItem(foodItem)
     });
     it("Firebaseから食べ物のアイテムを取得できる", async () => {
         const foodItems = await getFoodItems();

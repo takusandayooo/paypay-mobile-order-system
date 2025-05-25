@@ -17,7 +17,7 @@ const firebaseConfig = {
   appId: config.FIREBASE_APP_ID,
 };
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);//NOTE: module.test.tsでしようするためにexportする
+export const db = getFirestore(app);//NOTE: module.test.tsでdbを使用するためにexportする
 
 export const getFoodItems = async () => {
   const foodItemsCollection = collection(db, "food");

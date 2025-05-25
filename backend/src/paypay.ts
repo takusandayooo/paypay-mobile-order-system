@@ -62,7 +62,7 @@ export const getPaypayPaymentStatus = async (merchantPaymentId: string): Promise
                 return { "status": "CANCELED", "message": "決済がキャンセルされました。" };
             } else if (status === "FAILED") {
                 return { "status": "FAILED", "message": "決済が失敗しました。" };
-            }else if (status === "CREATED") {
+            } else if (status === "CREATED") {
                 return { "status": "CREATED", "message": "決済が作成されましたが、まだ完了していません。" };
             } else {
                 return { "status": status, "message": `決済のステータス: ${status}` };

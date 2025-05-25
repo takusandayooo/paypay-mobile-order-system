@@ -41,13 +41,6 @@ app.post('/cash_from_paypay', async (req: Request, res: Response) => {
 
   // 決済完了後のリダイレクトURLを生成
   const redirectUrl = `${req.protocol}://${req.get('host')}/paymentResult?merchantPaymentId=${merchantPaymentId}`;
-  // console.log('PayPay API リクエストパラメータ:', {
-  //   merchantPaymentId,
-  //   description,
-  //   orderItems,
-  //   amount,
-  //   redirectUrl
-  // });
   try {
     const parsedOderItems=OderItemSchema.array().parse(orderItems);
     const response = await createPaypayQRCode(
