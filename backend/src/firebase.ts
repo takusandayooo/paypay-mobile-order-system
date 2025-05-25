@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, setDoc, getDocs, getDoc, updateDoc } from "firebase/firestore";
 import { getConfig } from "./config";
-import { CustomerOrderDataSchema, OderItemSchema } from "./common.schema";
+import { CustomerOrderDataSchema, OderItemSchema, FoodItemSchema } from "./common.schema";
 
 
 
@@ -17,19 +17,31 @@ const firebaseConfig = {
   appId: config.FIREBASE_APP_ID,
 };
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const db = getFirestore(app);//NOTE: module.test.tsでdbを使用するためにexportする
 
 export const getFoodItems = async () => {
   const foodItemsCollection = collection(db, "food");
   const foodItemsSnapshot = await getDocs(foodItemsCollection);
 
-  const foodItems = foodItemsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  const foodItems = foodItemsSnapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      if (Object.keys(data).length === 0) {
+        return null;
+      }
+      try {
+        return {
+          id: doc.id,
+          data: FoodItemSchema.parse(data)
+        };
+      } catch (error) {
+        console.error(`ドキュメント ${doc.id} の検証エラー:`, error);
+        return null;
+      }
+    })
+    .filter(item => item !== null);
   return foodItems;
 };
-
 //オーダーしたアイテムをFirebaseに登録する関数
 export const addCustomerOrderData = async (
   merchantPaymentId: string,
@@ -54,7 +66,6 @@ export const addCustomerOrderData = async (
       return { statusCode: 409, message: "オーダIDは既に存在しています。" };
     }
     await setDoc(orderDocRef, parsedOrderData);
-    console.log("ID:", merchantPaymentId);
     return { statusCode: 200, message: "オーダデータを作成することができました。" };
   } catch (error) {
     console.error("Error adding order data: ", error);
@@ -66,7 +77,6 @@ export const updateOrderCallStatus = async (merchantPaymentId: string, orderCall
   const orderDocRef = doc(db, "orderItems", merchantPaymentId);
   try {
     await updateDoc(orderDocRef, { orderCallStatus });
-    console.log("Document updated with ID: ", merchantPaymentId);
     return { statusCode: 200, message: "オーダのステータスを変更できました。" };
   } catch (error) {
     console.error("Error updating order call status: ", error);
@@ -78,11 +88,23 @@ export const updateOrderCallStatus = async (merchantPaymentId: string, orderCall
 export const getCustomerAllOrderData = async () => {
   const orderItemsCollection = collection(db, "orderItems");
   const orderItemsSnapshot = await getDocs(orderItemsCollection);
-  const orderItems = orderItemsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    customerOrderData: CustomerOrderDataSchema.parse(doc.data()),
-  }));
-  return orderItems;
-}
 
+  const orderItems = orderItemsSnapshot.docs.map((doc) => {
+    const rawData = doc.data();
+    if (Object.keys(rawData).length === 0) {
+      return null;
+    }
+    try {
+      return {
+        id: doc.id,
+        customerOrderData: CustomerOrderDataSchema.parse(rawData),
+      };
+    } catch (error) {
+      console.error(`ドキュメント ${doc.id} の検証エラー:`, error);
+      return null;
+    }
+  }).filter(item => item !== null);
+
+  return orderItems;
+};
 
