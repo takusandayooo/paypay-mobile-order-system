@@ -49,6 +49,7 @@ function isHttpsClientSuccess(response: any): response is { STATUS: number; BODY
 export const getPaypayPaymentStatus = async (merchantPaymentId: string): Promise<{ status: string, message: string }> => {
     try {
         const response = await GetCodePaymentDetails([merchantPaymentId]);
+        console.log(response);
         if (!isHttpsClientSuccess(response) || response.STATUS !== 200) {
             throw new Error(`決済情報の取得に失敗: ${response}`);
         }
@@ -62,6 +63,8 @@ export const getPaypayPaymentStatus = async (merchantPaymentId: string): Promise
                 return { "status": "CANCELED", "message": "決済がキャンセルされました。" };
             } else if (status === "FAILED") {
                 return { "status": "FAILED", "message": "決済が失敗しました。" };
+            }else if (status === "CREATED") {
+                return { "status": "CREATED", "message": "決済が作成されましたが、まだ完了していません。" };
             } else {
                 return { "status": status, "message": `決済のステータス: ${status}` };
             }
@@ -71,4 +74,3 @@ export const getPaypayPaymentStatus = async (merchantPaymentId: string): Promise
         return { "status": "ERROR", "message": "決済情報の取得に失敗しました。" };
     }
 }
-
