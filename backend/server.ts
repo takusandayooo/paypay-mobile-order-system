@@ -41,13 +41,13 @@ app.post('/cash_from_paypay', async (req: Request, res: Response) => {
 
   // 決済完了後のリダイレクトURLを生成
   const redirectUrl = `${req.protocol}://${req.get('host')}/paymentResult?merchantPaymentId=${merchantPaymentId}`;
-  console.log('PayPay API リクエストパラメータ:', {
-    merchantPaymentId,
-    description,
-    orderItems,
-    amount,
-    redirectUrl
-  });
+  // console.log('PayPay API リクエストパラメータ:', {
+  //   merchantPaymentId,
+  //   description,
+  //   orderItems,
+  //   amount,
+  //   redirectUrl
+  // });
   try {
     const parsedOderItems=OderItemSchema.array().parse(orderItems);
     const response = await createPaypayQRCode(
@@ -57,7 +57,6 @@ app.post('/cash_from_paypay', async (req: Request, res: Response) => {
       amount,
       redirectUrl
     );
-    console.log('PayPay API レスポンス:', response);
 
     if (response && response.responseData && response.responseData.data.url) {
       const addCustomerOrderDataResponse = await addCustomerOrderData(
@@ -73,7 +72,6 @@ app.post('/cash_from_paypay', async (req: Request, res: Response) => {
           resultInfo: { code: 'FIREBASE_ERROR', message: addCustomerOrderDataResponse.message }
         });
       }
-      console.log('Firebaseへのデータ追加成功:', addCustomerOrderDataResponse.message);
       res.status(200).json({
         resultInfo: { code: 'SUCCESS' },
         data: {
@@ -97,7 +95,6 @@ app.post('/cash_from_paypay', async (req: Request, res: Response) => {
 // 決済完了後のステータスを確認するエンドポイント
 app.post('/get_payment_status', async (req: Request, res: Response) => {
   const { merchantPaymentId } = req.body;
-  console.log('merchantPaymentId:', merchantPaymentId);
 
   try {
     const paymentStatus = await getPaypayPaymentStatus(merchantPaymentId);
@@ -112,7 +109,7 @@ app.post('/get_payment_status', async (req: Request, res: Response) => {
       // FirebaseにorderStatusを変更
       const orderStatus="not_called";
       const updateOrderCallStatusResponse = await updateOrderCallStatus(merchantPaymentId,orderStatus);
-      console.log('オーダーステータスの変更が成功しました:', updateOrderCallStatusResponse);
+      console.info('オーダーステータスの変更が成功しました:', updateOrderCallStatusResponse);
     } else if (paymentStatus.status === 'CANCELED') {
       status = 'canceled';
       message = '決済がキャンセルされました。';
@@ -120,7 +117,6 @@ app.post('/get_payment_status', async (req: Request, res: Response) => {
       status = 'failed';
       message = '決済が失敗しました。';
     }
-    console.log(`Payment status for ${merchantPaymentId}: ${status}`);
     // Firebaseに決済情報を保存
 
     res.json({
@@ -140,24 +136,10 @@ app.get("/get_order_data", async (req: Request, res: Response) => {
   const filteredOrderData = orderData.filter((order) => {
     return order.customerOrderData.orderCallStatus === "not_called" || order.customerOrderData.orderCallStatus === "called";
   });
-  /* 
-  [
-  {
-    id: "test_merchant_payment_id",
-    status: "not_called",
-  },
-  {
-    id: "test_merchant_payment_id2",
-    status: "called",
-  }
-  ]
-  だけを返すようにする
-  */
   const simplifiedOrderData = filteredOrderData.map((order) => ({
     merchantPaymentId: order.customerOrderData.merchantPaymentId,
     orderCallStatus: order.customerOrderData.orderCallStatus,
   }));
-  console.log("Filtered Order Data:", simplifiedOrderData);
   res.json({ simplifiedOrderData });
 });
   

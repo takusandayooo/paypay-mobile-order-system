@@ -49,7 +49,6 @@ function isHttpsClientSuccess(response: any): response is { STATUS: number; BODY
 export const getPaypayPaymentStatus = async (merchantPaymentId: string): Promise<{ status: string, message: string }> => {
     try {
         const response = await GetCodePaymentDetails([merchantPaymentId]);
-        console.log(response);
         if (!isHttpsClientSuccess(response) || response.STATUS !== 200) {
             throw new Error(`決済情報の取得に失敗: ${response}`);
         }
