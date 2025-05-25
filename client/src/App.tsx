@@ -21,7 +21,21 @@ const App: React.FC = () => {
       try {
         const res = await fetch("/foodItem");
         const data = await res.json();
-        setFoodItems(data.foodItems);
+
+        if (data && data.foodItems && Array.isArray(data.foodItems)) {
+          // データ構造を変換してから検証
+          const formattedItems = data.foodItems.map(
+            (item: { id: string; data: FoodItemSchema }) => ({
+              id: item.id,
+              ...item.data,
+            })
+          );
+          const parsedItems = FoodItemSchema.array().parse(formattedItems);
+          setFoodItems(parsedItems);
+          console.log("Fetched food items:", formattedItems);
+        } else {
+          console.error("Invalid data format:", data);
+        }
       } catch (err) {
         console.error("Error fetching food items:", err);
       }
@@ -37,8 +51,8 @@ const App: React.FC = () => {
   const handleQuantityChange = (item: FoodItemSchema, quantity: number) => {
     if (quantity < 0) return;
     // 品切れ商品で、数量を増やす操作の場合は処理をスキップ
-    if (item.isSoldOut && quantity > (getItemQuantity(item.id || ""))) return;
-    
+    if (item.isSoldOut && quantity > getItemQuantity(item.id || "")) return;
+
     const idx = orderItems.findIndex((o) => o.item.id === item.id);
     if (idx >= 0) {
       const updated = [...orderItems];
@@ -54,40 +68,52 @@ const App: React.FC = () => {
 
   // 合計金額
   const calculateTotal = () =>
-    orderItems.reduce((t, o) => t + o.item.amount * o.quantity, 0);
+    orderItems.reduce((t, o) => t + (o.item.amount || 0) * o.quantity, 0);
 
   // PayPay決済
   const handlePayWithPayPay = async () => {
     if (orderItems.length === 0) return;
     setIsProcessing(true);
-    
+
     try {
       // 最新の商品情報を取得
       const response = await fetch("/foodItem");
       const foodItemData = await response.json();
-      const latestFoodItems =FoodItemSchema.array().parse( foodItemData.foodItems);
-      
+      const formattedItems = foodItemData.foodItems.map(
+        (item: { id: string; data: FoodItemSchema }) => ({
+          id: item.id,
+          ...item.data,
+        })
+      );
+      const parsedItems = FoodItemSchema.array().parse(formattedItems);
+
       // 売り切れチェック
-      const soldOutItems = orderItems.filter(orderItem => {
-        const latestItem = latestFoodItems.find(item => item.id === orderItem.item.id);
+      const soldOutItems = orderItems.filter((orderItem) => {
+        const latestItem = parsedItems.find(
+          (item) => item.id === orderItem.item.id
+        );
         return latestItem && latestItem.isSoldOut;
       });
-      
+
       // 売り切れアイテムがある場合、処理を中断
       if (soldOutItems.length > 0) {
-        const soldOutNames = soldOutItems.map(item => item.item.name).join(", ");
-        alert(`申し訳ございません。以下の商品は売り切れとなりました: ${soldOutNames}`);
+        const soldOutNames = soldOutItems
+          .map((item) => item.item.name)
+          .join(", ");
+        alert(
+          `申し訳ございません。以下の商品は売り切れとなりました: ${soldOutNames}`
+        );
         setIsProcessing(false);
         return;
       }
-      
+
       const parsedOrderItems = OderItemSchema.array().parse(
         orderItems.map((o) => ({
-          name: o.item.name,
-          category: o.item.category,
+          name: o.item.name || "",
+          category: o.item.category || "",
           quantity: o.quantity,
-          productId: o.item.productId,
-          unitPrice: { amount: o.item.amount, currency: "JPY" },
+          productId: o.item.productId || "",
+          unitPrice: { amount: o.item.amount || 0, currency: "JPY" },
         }))
       );
 
