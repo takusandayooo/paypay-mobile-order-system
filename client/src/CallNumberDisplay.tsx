@@ -1,10 +1,13 @@
+import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { db } from "./firebase"; // Firebaseの初期化を行ったファイルからdbをインポート
 
 interface OrderData {
   merchantPaymentId: string;
   orderCallStatus: "not_called" | "called" | "received" | "not_cashed";
 }
+
 const CallNumberDisplay = () => {
   const [orders, setOrders] = useState<OrderData[]>([]);
 
@@ -14,25 +17,33 @@ const CallNumberDisplay = () => {
   const called = orders.filter((order) => order.orderCallStatus === "called");
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch("/get_order_data");
-        if (!res.ok) throw new Error("Network response was not ok");
-        const data = await res.json();
-        console.log("Fetched order data:", data);
-        if (!Array.isArray(data["simplifiedOrderData"])) {
-          console.warn("Data is not an array");
+    // ordersコレクションへの参照を作成
+    const ordersRef = collection(db, "orderItems");
+
+    // リアルタイムリスナーを設定
+    const unsubscribe = onSnapshot(
+      ordersRef,
+      (snapshot) => {
+        try {
+          const ordersData = snapshot.docs.map(
+            (doc) => doc.data() as OrderData
+          );
+          console.log("Realtime order data:", ordersData);
+          setOrders(ordersData);
+        } catch (error) {
+          console.error("Error processing order data:", error);
           setOrders([]);
-        } else {
-          setOrders(data["simplifiedOrderData"]);
         }
-      } catch (error) {
-        console.error("Error fetching order data:", error);
-        setOrders([]);
+      },
+      (error) => {
+        console.error("Error listening to orders:", error);
       }
-    };
-    fetchOrders();
+    );
+
+    // クリーンアップ関数でリスナーを解除
+    return () => unsubscribe();
   }, []);
+
   return (
     <>
       {/* ---- 埋め込みスタイル ---- */}

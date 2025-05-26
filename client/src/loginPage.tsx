@@ -1,12 +1,11 @@
 /* AdminPage.tsx */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import type { CustomerOrderDataSchema, FoodItemSchema } from "./common.schema";
+import { CustomerOrderDataSchema, type FoodItemSchema } from "./common.schema";
 import {
   addFoodItem,
+  db,
   deleteFoodItem,
-  getCustomerAllOrderData,
-  getFoodItems,
   updateFoodItem,
   updateOrderCallStatus,
 } from "./firebase";
@@ -34,6 +33,7 @@ import {
   GridActionsCellItem,
   type GridColDef,
 } from "@mui/x-data-grid";
+import { collection, onSnapshot } from "firebase/firestore";
 
 /* ------------------------------------------------- */
 /*                定数・型                            */
@@ -63,19 +63,42 @@ export default function AdminPage() {
 
   /* ---------------- load ---------------- */
   useEffect(() => {
-    Promise.all([loadFood(), loadOrders()]);
-  }, []);
-
-  const loadFood = async () => {
-    const res = await getFoodItems();
-    setFood(res.map((f) => ({ ...f.data, id: f.id })));
-  };
-  const loadOrders = async () => {
-    const res = await getCustomerAllOrderData();
-    setOrders(
-      res.map(({ id, customerOrderData }) => ({ id, data: customerOrderData }))
+    // 注文データのリアルタイムリスナーを設定
+    const ordersUnsubscribe = onSnapshot(
+      collection(db, "orderItems"),
+      (snapshot) => {
+        const ordersData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          data: CustomerOrderDataSchema.parse(doc.data()),
+        }));
+        setOrders(ordersData);
+      },
+      (error) => {
+        console.error("Error listening to orders:", error);
+      }
     );
-  };
+
+    // フードデータのリアルタイムリスナーを設定
+    const foodUnsubscribe = onSnapshot(
+      collection(db, "food"),
+      (snapshot) => {
+        const foodData = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        })) as FoodItemSchema[];
+        setFood(foodData);
+      },
+      (error) => {
+        console.error("Error listening to food items:", error);
+      }
+    );
+
+    // クリーンアップ関数でリスナーを解除
+    return () => {
+      ordersUnsubscribe();
+      foodUnsubscribe();
+    };
+  }, []);
 
   /* ---------------- CRUD ---------------- */
   const handleSaveFood = async (
@@ -85,13 +108,15 @@ export default function AdminPage() {
     else await addFoodItem(item);
     setToast("保存しました");
     setOpenDlg(false);
-    loadFood();
+    // リアルタイム監視しているため不要
+    // loadFood();
   };
 
   const handleDeleteFood = async (id: string) => {
     await deleteFoodItem(id);
     setToast("削除しました");
-    loadFood();
+    // リアルタイム監視しているため不要
+    // loadFood();
   };
 
   const handleOrderStatus = async (
@@ -100,7 +125,8 @@ export default function AdminPage() {
   ) => {
     await updateOrderCallStatus(id, v);
     setToast("ステータス更新");
-    loadOrders();
+    // リアルタイム監視しているため不要
+    // loadOrders();
   };
 
   /* ---------------- columns ---------------- */
