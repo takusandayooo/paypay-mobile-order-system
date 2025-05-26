@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
-import { FoodItemSchema, CustomerOrderDataSchema } from './common.schema';
+import { getFirestore, collection, doc, setDoc, updateDoc } from "firebase/firestore";
+import { FoodItemSchema } from './common.schema';
 
 
 // Firebaseの初期化
@@ -15,7 +15,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
 export { auth };
 //パスワード認証のための関数
@@ -42,16 +42,6 @@ export const updateOrderCallStatus = async (merchantPaymentId: string, orderCall
   }
 }
 
-// フードのアイテムを取得する関数
-export const getFoodItems = async () => {
-  const foodItemsCollection = collection(db, "food");
-  const foodItemsSnapshot = await getDocs(foodItemsCollection);
-  const foodItems = foodItemsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    data: FoodItemSchema.parse(doc.data()), // プロパティ名を追加
-  }));
-  return foodItems;
-};
 // フードアイテムを変更する関数
 export const updateFoodItem = async (id: string, data: FoodItemSchema) => {
   const foodDocRef = doc(db, "food", id);
@@ -89,15 +79,3 @@ export const deleteFoodItem = async (id: string) => {
     return { statusCode: 500, message: "エラーが発生しました。" };
   }
 }
-// firebaseに登録されているオーダー情報を取得する関数
-export const getCustomerAllOrderData = async () => {
-  const orderItemsCollection = collection(db, "orderItems");
-  const orderItemsSnapshot = await getDocs(orderItemsCollection);
-  const orderItems = orderItemsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    customerOrderData: CustomerOrderDataSchema.parse(doc.data()),
-  }));
-  return orderItems;
-}
-
-
